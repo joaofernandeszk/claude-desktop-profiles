@@ -105,6 +105,13 @@ that instance back into its own account.
   Safe Storage" — logins survive. Clones live outside Spotlight's index
   (`~/Library/Application Support/claude-desktop-profiles/apps`) so they
   can't be launched without their `--user-data-dir`.
+- **Per-profile environment**: an optional `<folder>/.cdp-env` holds
+  `KEY=VALUE` lines (`#` comments allowed, a leading `~` or `$HOME`
+  expanded) that `cdp launch` passes with `open --env`. Claude hands them to
+  the Claude Code sessions it starts, so `CLAUDE_CONFIG_DIR=~/.claude-work`
+  gives a profile its own Claude Code settings, MCP servers, skills and
+  memory. Profile apps take these only at launch, so quit and relaunch after
+  changing the file.
 - **Staying fresh**: on every launch, if the original Claude.app version
   differs from the clone's, the clone is rebuilt from scratch and re-iconed
   — clones can't go stale after Claude updates.

@@ -267,6 +267,24 @@ color_of_profile() {
   [[ -f "$f" ]] && print -- "$(head -1 "$f" | tr -d '[:space:]')" || print -- "orange"
 }
 
+env_args_of_profile() {
+  # Reads <dataDir>/.cdp-env: one KEY=VALUE per line, blank lines and #
+  # comments ignored, a leading ~ or $HOME expanded. Each entry becomes an
+  # `open --env` flag so the profile's Claude (and the Claude Code sessions it
+  # spawns) get it, e.g. CLAUDE_CONFIG_DIR=~/.claude-work to give a profile
+  # its own Claude Code config. Like .cdp-color it travels with the folder.
+  local f="$1/.cdp-env" line key val
+  [[ -f "$f" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ "$line" =~ '^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*)=(.*[^[:space:]])?[[:space:]]*$' ]] || continue
+    key="${match[1]}"; val="${match[2]}"
+    [[ "$val" == "~" || "$val" == "~/"* ]] && val="$HOME${val:1}"
+    val="${val//\$HOME/$HOME}"
+    print -r -- "--env"
+    print -r -- "$key=$val"
+  done < "$f"
+}
+
 # Compile an AppleScript source file into a .app with our bundle id and the
 # Claude icon (optionally hue-tinted), replacing any existing bundle.
 # --stay-open builds a stay-open applet (persistent Dock tile).
@@ -491,7 +509,10 @@ cmd_launch() {
   fi
 
   ensure_clone "$claude_app" "$clone" "$color"
-  open "$clone" --args --user-data-dir="$data_dir"
+  local -a env_args
+  env_args=("${(@f)$(env_args_of_profile "$data_dir")}")
+  [[ -z "${env_args[*]}" ]] && env_args=()
+  open "${env_args[@]}" "$clone" --args --user-data-dir="$data_dir"
 }
 
 cmd_color() {
